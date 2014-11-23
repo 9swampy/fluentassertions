@@ -15,9 +15,11 @@ namespace FluentAssertions.Specialized
     public class ActionAssertions : ReferenceTypeAssertions<Action, ActionAssertions>
     {
         private readonly IExtractExceptions extractor;
+        private readonly ExceptionInterceptor exceptionInterceptor;
 
         public ActionAssertions(Action subject, IExtractExceptions extractor)
         {
+            this.exceptionInterceptor = new ExceptionInterceptor(subject);
             this.extractor = extractor;
             Subject = subject;
         }
@@ -35,7 +37,7 @@ namespace FluentAssertions.Specialized
         public ExceptionAssertions<TException> ShouldThrow<TException>(string because = "", params object[] reasonArgs)
             where TException : Exception
         {
-            Exception actualException = InvokeSubjectWithInterception();
+            Exception actualException = this.exceptionInterceptor.InvokeSubjectWithInterception();
             IEnumerable<TException> expectedExceptions = extractor.OfType<TException>(actualException);
 
             Execute.Assertion
@@ -67,7 +69,7 @@ namespace FluentAssertions.Specialized
         /// </param>
         public void ShouldNotThrow<TException>(string because = "", params object[] reasonArgs) where TException : Exception
         {
-            Exception actualException = InvokeSubjectWithInterception();
+            Exception actualException = this.exceptionInterceptor.InvokeSubjectWithInterception();
             IEnumerable<TException> expectedExceptions = extractor.OfType<TException>(actualException);
 
             if (actualException != null)
@@ -103,27 +105,37 @@ namespace FluentAssertions.Specialized
             }
         }
 
-        private Exception InvokeSubjectWithInterception()
-        {
-            Exception actualException = null;
-
-            try
-            {
-                Subject();
-            }
-            catch (Exception exc)
-            {
-                actualException = exc;
-            }
-            return actualException;
-        }
-
         /// <summary>
         /// Returns the type of the subject the assertion applies on.
         /// </summary>
         protected override string Context
         {
             get { return "action"; }
+        }
+
+        private class ExceptionInterceptor
+        {
+            private readonly Action subject;
+
+            public ExceptionInterceptor(Action subject)
+            {
+                this.subject = subject;
+            }
+
+            public Exception InvokeSubjectWithInterception()
+            {
+                Exception actualException = null;
+
+                try
+                {
+                    this.subject();
+                }
+                catch (Exception exc)
+                {
+                    actualException = exc;
+                }
+                return actualException;
+            }
         }
     }
 }

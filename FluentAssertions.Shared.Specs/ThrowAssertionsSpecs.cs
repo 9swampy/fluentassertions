@@ -71,5 +71,62 @@ namespace FluentAssertions.Specs
                     "Expected a <System.Exception> to be thrown, but no exception was thrown.");
             }
         }
+
+#if FAKES
+        public interface IFoo
+        {
+            void Do();
+        }
+
+        [TestMethod]
+        public void When_Project_IFooLambda_subject_throws_generic_expected_exception_with_an_expected_message_it_should_not_arrest_when_debugged()
+        {
+            var testSubject = A.Fake<IFoo>();
+            A.CallTo(() => testSubject.Do()).Throws(new InvalidOperationException("some message"));
+
+            Action act = testSubject.Do;
+
+            act.ShouldThrow<InvalidOperationException>().WithMessage("some message");
+        }
+
+        [TestMethod]
+        public void When_Project_IFooMethodGroup_subject_throws_generic_expected_exception_with_an_expected_message_it_should_not_arrest_when_debugged()
+        {
+            var testSubject = A.Fake<IFoo>();
+            A.CallTo(() => testSubject.Do()).Throws(new InvalidOperationException("some message"));
+
+            Action act = () => testSubject.Do();
+
+            act.ShouldThrow<InvalidOperationException>().WithMessage("some message");
+        }
+#endif
+
+        public class Foo
+        {
+            public void Do()
+            {
+                throw new InvalidOperationException("some message");
+            }
+        }
+
+        [TestMethod]
+        public void When_Project_FooLambda_subject_throws_generic_expected_exception_with_an_expected_message_it_should_not_arrest_when_debugged()
+        {
+            var testSubject = new Foo();
+
+            Action act = testSubject.Do;
+
+            act.ShouldThrow<InvalidOperationException>().WithMessage("some message");
+        }
+
+        [TestMethod]
+        public void When_Project_FooMethodGroup_subject_throws_generic_expected_exception_with_an_expected_message_it_should_not_arrest_when_debugged()
+        {
+            var testSubject = new Foo();
+
+            Action act = () => testSubject.Do();
+
+            act.ShouldThrow<InvalidOperationException>().WithMessage("some message");
+        }
     }
 }
